@@ -60,7 +60,6 @@ do
         * ) ;;
     esac
 done
-exit
 
 if [[ ${DO_INSTALL[0]} > 0 ]]
 then
@@ -81,7 +80,8 @@ fi
 
 if [[ ${DO_INSTALL[3]} > 0  && ! -f "/usr/lib/$(ls /usr/lib/gcc | tail -1)/libcurses.so" ]]
 then
-    read -p "    Install ncurses library, recommended for RF24Gateway [y/N]? " answer
+    #read -p "    Install ncurses library, recommended for RF24Gateway [y/N]? " answer
+    answer="y"
     case ${answer^^} in
         Y ) sudo apt-get install libncurses5-dev;;
         * ) SUGGESTED_EXAMPLE[3]=RF24GatewayNode;;
@@ -96,7 +96,8 @@ echo "3. MRAA (Intel Devices)"
 echo "4. PiGPIO"
 echo "5. BCM2835 Driver (for RPi only)"
 echo "6. LittleWire"
-read answer
+#read answer
+answer="1"
 case ${answer^^} in
     1) RF24DRIVER+="SPIDEV";;
     2) RF24DRIVER+="wiringPi";;
@@ -158,7 +159,8 @@ install_repo() {
     if [[ "$CWD" != "*/build" ]]; then
         sudo ldconfig
     fi
-    read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
+    #read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
+    answer="y"
     case ${answer^^} in
         N ) ;;
         * )
@@ -190,7 +192,8 @@ done
 
 INSTALL_PYRF24="N"
 echo $'\n'
-read -p "Would you like to install the unified python wrapper package (pyrf24) [y/N]?" INSTALL_PYRF24
+#read -p "Would you like to install the unified python wrapper package (pyrf24) [y/N]?" INSTALL_PYRF24
+INSTALL_PYRF24="y"
 case ${INSTALL_PYRF24^^} in
     Y )
         if [[ ! -d "$ROOT_PATH/pyRF24" ]]
