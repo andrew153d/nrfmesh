@@ -39,7 +39,7 @@ Once the required packages are installed, the standard cmake workflow is used:
 mkdir build
 cd build
 cmake ..
-make -j4
+make -j$(nproc)
 ```
 
 Watch for any errors after running cmake to check for mising packages.
