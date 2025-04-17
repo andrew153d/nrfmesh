@@ -12,6 +12,14 @@ determines which system initiates the request to exchange network packets.
 
 This makes the design polled from the primary radio to the secondary radio.
 
+## install script
+Download the install script
+```
+wget https://raw.githubusercontent.com/andrew153d/nrfmesh/main/install.sh
+sudo chmod +x install.sh
+./install.sh
+```
+
 ## building
 
 This project uses the cmake build system and tclap for command-line arguments.
