@@ -24,7 +24,7 @@ sudo apt-get install git cmake build-essential \
 
 First, clone the repository
 ```
-git clone https://github.com/andrew153d/nrfnet.git
+git clone https://github.com/andrew153d/nrfmesh.git
 ```
 
 Install NRF24
