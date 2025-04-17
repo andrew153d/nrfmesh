@@ -12,46 +12,13 @@ determines which system initiates the request to exchange network packets.
 
 This makes the design polled from the primary radio to the secondary radio.
 
-## Installation Methods
-### install script
+## Installation Script
 Download the install script
 ```
 wget https://raw.githubusercontent.com/andrew153d/nrfmesh/main/install.sh
 sudo chmod +x install.sh
 ./install.sh
 ```
-
-### building
-
-This project uses the cmake build system and tclap for command-line arguments.
-The following packages must be installed:
-
-```
-sudo apt-get install git cmake build-essential \
-    libtclap-dev pkg-config
-```
-
-First, clone the repository
-```
-git clone https://github.com/andrew153d/nrfmesh.git
-```
-
-Install NRF24
-
-```
-./nrfinstall.sh
-```
-
-Once the required packages are installed, the standard cmake workflow is used:
-
-```
-mkdir build
-cd build
-cmake ..
-make -j$(nproc)
-```
-
-Watch for any errors after running cmake to check for mising packages.
 
 ## usage
 
