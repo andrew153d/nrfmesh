@@ -19,3 +19,5 @@ pkg_check_modules(tclap REQUIRED tclap)
 # Subdirectories ###############################################################
 
 add_subdirectory(nerfnet)
+
+install(TARGETS nrfnet DESTINATION bin)

@@ -15,7 +15,6 @@ echo "Cloning the repository..."
 git clone https://github.com/andrew153d/nrfmesh.git || {
   echo "Repository already exists. Skipping clone."
 }
-
 # Change to the repository directory
 cd nrfmesh || exit
 
@@ -30,5 +29,5 @@ mkdir -p build
 cd build
 cmake ..
 make -j$(nproc)
-
+make install
 echo "Installation complete!"
