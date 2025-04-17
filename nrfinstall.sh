@@ -44,6 +44,8 @@ if [[ $RUN_NO_INPUT -eq 1 ]]; then
     CHOOSE_VERSION="N"
 else
     read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
+    CHOOSE_VERSION=${CHOOSE_VERSION:-N}
+fi
 
 for index in "${!REPOS[@]}"
 do
