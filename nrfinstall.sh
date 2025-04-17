@@ -44,7 +44,7 @@ if [[ $RUN_NO_INPUT -eq 1 ]]; then
     CHOOSE_VERSION="N"
 else
     read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
-    CHOOSE_VERSION=${CHOOSE_VERSION:-N}
+    #CHOOSE_VERSION=${CHOOSE_VERSION:-N}
 fi
 
 for index in "${!REPOS[@]}"
@@ -176,7 +176,13 @@ install_repo() {
     if [[ "$CWD" != "*/build" ]]; then
         sudo ldconfig
     fi
-    read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
+    
+    if [[ $RUN_NO_INPUT -eq 1 ]]; then
+        answer="Y"
+    else
+        read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
+    fi
+    
     case ${answer^^} in
         N ) ;;
         * )
