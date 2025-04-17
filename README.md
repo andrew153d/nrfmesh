@@ -33,7 +33,7 @@ sudo chmod +x nrfinstall.sh
 Once the required packages are installed, the standard cmake workflow is used:
 
 ```
-git clone git@github.com:aarossig/nerfnet.git
+git clone https://github.com/andrew153d/nrfnet.git
 cd nerfnet
 mkdir build
 cd build
