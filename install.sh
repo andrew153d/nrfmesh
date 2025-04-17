@@ -8,6 +8,7 @@ sudo rm -r /usr/local/include/RF24
 cd $SCRIPT_DIR
 sudo chmod +x nrfinstall.sh
 ./nrfinstall.sh
+cd $SCRIPT_DIR
 # git clone git@github.com:aarossig/nerfnet.git
 # cd nerfnet
 mkdir build
