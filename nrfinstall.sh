@@ -40,10 +40,10 @@ then
     sudo apt-get install cmake
 fi
 
-read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
 if [[ $RUN_NO_INPUT -eq 1 ]]; then
     CHOOSE_VERSION="N"
-fi
+else
+    read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
 
 for index in "${!REPOS[@]}"
 do
