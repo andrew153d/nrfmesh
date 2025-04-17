@@ -20,6 +20,20 @@ sudo chmod +x install.sh
 ./install.sh
 ```
 
+## connection
+
+The following table provides the pin connections for the Raspberry Pi to the nRF24L01 module:
+
+| Pin Name | Pi header number |
+| -------- | ---------------- |
+| GND      | 25               |
+| VCC      | 17               |
+| CE       | 15               |
+| CSN      | 24               |
+| SCK      | 23               |
+| MOSI     | 19               |
+| MISO     | 21               |
+
 ## usage
 
 As mentioned above, `nerfnet` relies on polling from a primary radio to a
