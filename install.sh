@@ -6,6 +6,9 @@ if [ "$EUID" -ne 0 ]; then
   exit
 fi
 
+# Get the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Install required packages
 echo "Installing required packages..."
 sudo apt-get install -y git cmake build-essential libtclap-dev pkg-config
@@ -30,4 +33,9 @@ cd build
 cmake ..
 make -j$(nproc)
 make install
+
+cd $SCRIPT_DIR
+
+rm -rf nrfmesh
+
 echo "Installation complete!"
