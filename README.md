@@ -22,7 +22,12 @@ sudo apt-get install git cmake build-essential \
     libtclap-dev pkg-config
 ```
 
-Also install NRF24
+First, clone the repository
+```
+git clone https://github.com/andrew153d/nrfnet.git
+```
+
+Install NRF24
 
 ```
 ./nrfinstall.sh
