@@ -25,16 +25,12 @@ sudo apt-get install git cmake build-essential \
 Also install NRF24
 
 ```
-wget -O nrfinstall.sh https://raw.githubusercontent.com/nRF24/.github/main/installer/install.sh
-sudo chmod +x nrfinstall.sh
 ./nrfinstall.sh
 ```
 
 Once the required packages are installed, the standard cmake workflow is used:
 
 ```
-git clone https://github.com/andrew153d/nrfnet.git
-cd nerfnet
 mkdir build
 cd build
 cmake ..
