@@ -1,17 +1,34 @@
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-sudo apt-get install git cmake build-essential libtclap-dev pkg-config
-sudo rm /usr/local/lib/librf24.*
-sudo rm /usr/local/lib/librf24-bcm.so
-sudo rm -r /usr/local/include/RF24
-#rm nrfinstall.sh
-#wget -O nrfinstall.sh https://raw.githubusercontent.com/nRF24/.github/main/installer/install.sh
-cd $SCRIPT_DIR
-sudo chmod +x nrfinstall.sh
+#!/bin/bash
+
+# Ensure the script is run with sudo
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root"
+  exit
+fi
+
+# Install required packages
+echo "Installing required packages..."
+sudo apt-get install -y git cmake build-essential libtclap-dev pkg-config
+
+# Clone the repository
+echo "Cloning the repository..."
+git clone https://github.com/andrew153d/nrfmesh.git || {
+  echo "Repository already exists. Skipping clone."
+}
+
+# Change to the repository directory
+cd nrfmesh || exit
+
+# Run the NRF24 installation script
+echo "Running NRF24 installation script..."
+chmod +x nrfinstall.sh
 ./nrfinstall.sh
-cd $SCRIPT_DIR
-# git clone git@github.com:aarossig/nerfnet.git
-# cd nerfnet
-mkdir build
+
+# Build the project
+echo "Building the project..."
+mkdir -p build
 cd build
 cmake ..
 make -j$(nproc)
+
+echo "Installation complete!"
