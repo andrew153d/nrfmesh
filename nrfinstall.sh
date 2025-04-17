@@ -13,7 +13,7 @@ DO_INSTALL=("0" "0" "0" "0")
 CHOOSE_VERSION="N"
 EXAMPLE_PATH=("examples_linux" "examples_RPi" "examples_RPi" "examples")
 SUGGESTED_EXAMPLE=("gettingstarted" "helloworld_tx" "RF24Mesh_Example_Master" "RF24Gateway_ncurses")
-RUN_NO_INPUT=1
+
 # TODO Remove this when ready for master branches (or improve it via CLI args)
 BRANCHES=("master" "master" "master" "master")
 
@@ -40,29 +40,18 @@ then
     sudo apt-get install cmake
 fi
 
-if [[ $RUN_NO_INPUT -eq 1 ]]; then
-    CHOOSE_VERSION="N"
-else
-    read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
-    #CHOOSE_VERSION=${CHOOSE_VERSION:-N}
-fi
-
+#read -p "Choose versions to install (Default: Install latest code from master) [y/N]? " CHOOSE_VERSION
+CHOOSE_VERSION="y"
 for index in "${!REPOS[@]}"
 do
-    if [[ $RUN_NO_INPUT -eq 1 ]]; then
-        answer="Y"
-    else
-        read -p "Do you want to install the ${REPOS[index]} library, [y/N]? " answer
-    fi
+    #read -p "Do you want to install the ${REPOS[index]} library, [y/N]? " answer
+    answer="y"
     case ${answer^^} in
         Y ) DO_INSTALL[index]=1
             if [ "${CHOOSE_VERSION^^}" = "Y" ]
             then
-                if [[ $RUN_NO_INPUT -eq 1 ]]; then
-                    version="${BRANCHES[index]}"
-                else
-                    read -p "Which version/branch of ${REPOS[index]} to install (default is ${BRANCHES[index]})? " version
-                fi
+                #read -p "Which version/branch of ${REPOS[index]} to install (default is ${BRANCHES[index]})? " version
+                version=""
                 if [[ ${#version} -gt 0 ]]; then
                     BRANCHES[index]=$version
                 fi
@@ -71,6 +60,7 @@ do
         * ) ;;
     esac
 done
+exit
 
 if [[ ${DO_INSTALL[0]} > 0 ]]
 then
@@ -91,11 +81,7 @@ fi
 
 if [[ ${DO_INSTALL[3]} > 0  && ! -f "/usr/lib/$(ls /usr/lib/gcc | tail -1)/libcurses.so" ]]
 then
-    if [[ $RUN_NO_INPUT -eq 1 ]]; then
-        answer="Y"
-    else
-        read -p "    Install ncurses library, recommended for RF24Gateway [y/N]? " answer
-    fi
+    read -p "    Install ncurses library, recommended for RF24Gateway [y/N]? " answer
     case ${answer^^} in
         Y ) sudo apt-get install libncurses5-dev;;
         * ) SUGGESTED_EXAMPLE[3]=RF24GatewayNode;;
@@ -103,18 +89,14 @@ then
     echo ""
 fi
 
-if [[ $RUN_NO_INPUT -eq 1 ]]; then
-    answer="1"
-else
-    echo "*** Which hardware driver library do you wish to use? ***"
-    echo "1. SPIDEV (most compatible, Default)"
-    echo "2. WiringPi"
-    echo "3. MRAA (Intel Devices)"
-    echo "4. PiGPIO"
-    echo "5. BCM2835 Driver (for RPi only)"
-    echo "6. LittleWire"
-    read answer
-fi
+echo "*** Which hardware driver library do you wish to use? ***"
+echo "1. SPIDEV (most compatible, Default)"
+echo "2. WiringPi"
+echo "3. MRAA (Intel Devices)"
+echo "4. PiGPIO"
+echo "5. BCM2835 Driver (for RPi only)"
+echo "6. LittleWire"
+read answer
 case ${answer^^} in
     1) RF24DRIVER+="SPIDEV";;
     2) RF24DRIVER+="wiringPi";;
@@ -176,13 +158,7 @@ install_repo() {
     if [[ "$CWD" != "*/build" ]]; then
         sudo ldconfig
     fi
-    
-    if [[ $RUN_NO_INPUT -eq 1 ]]; then
-        answer="Y"
-    else
-        read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
-    fi
-    
+    read -p $'\n'"Do you want to build the ${REPOS[$1]} examples [Y/n]? " answer
     case ${answer^^} in
         N ) ;;
         * )
@@ -212,12 +188,9 @@ do
     fi
 done
 
-# Modify pyrf24 installation prompt
-if [[ $RUN_NO_INPUT -eq 1 ]]; then
-    INSTALL_PYRF24="N"
-else
-    read -p "Would you like to install the unified python wrapper package (pyrf24) [y/N]?" INSTALL_PYRF24
-fi
+INSTALL_PYRF24="N"
+echo $'\n'
+read -p "Would you like to install the unified python wrapper package (pyrf24) [y/N]?" INSTALL_PYRF24
 case ${INSTALL_PYRF24^^} in
     Y )
         if [[ ! -d "$ROOT_PATH/pyRF24" ]]
