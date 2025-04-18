@@ -3,6 +3,28 @@
 
 #include <string>
 #include <unordered_map>
+#include <stdio.h>
+#include <stdint.h>
+
+enum operation_mode
+{
+    PRIMARY,
+    SECONDARY,
+    COMMON
+};
+
+struct ConfigValues {
+    std::string interface_name;
+    operation_mode mode;
+    uint8_t channel;
+    std::string ip_address;
+    std::string ip_mask;
+    std::string tunnel_ip_address;
+    std::string tunnel_netmask;
+    uint64_t poll_interval;
+    bool enable_tunnel_logs;
+    uint16_t ce_pin;
+};
 
 class ConfigParser {
 public:
@@ -15,9 +37,12 @@ public:
     // Get a value from the configuration file
     std::string get(const std::string& key) const;
 
+    ConfigValues getConfig();
+
 private:
     std::string filePath;
     std::unordered_map<std::string, std::string> config;
+    ConfigValues config_values;
 };
 
 #endif // CONFIG_PARSER_H
