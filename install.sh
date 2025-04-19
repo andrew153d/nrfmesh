@@ -6,6 +6,9 @@ if [ "$EUID" -ne 0 ]; then
   exit
 fi
 
+# Get the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Install required packages
 echo "Installing required packages..."
 sudo apt-get install -y git cmake build-essential libtclap-dev pkg-config
@@ -15,7 +18,6 @@ echo "Cloning the repository..."
 git clone https://github.com/andrew153d/nrfmesh.git || {
   echo "Repository already exists. Skipping clone."
 }
-
 # Change to the repository directory
 cd nrfmesh || exit
 
@@ -30,5 +32,27 @@ mkdir -p build
 cd build
 cmake ..
 make -j$(nproc)
+make install
+
+cd $SCRIPT_DIR
+
+# Create default configuration directory and file
+CONFIG_DIR="/etc/nrfmesh"
+CONFIG_FILE="$CONFIG_DIR/nrfmesh.conf"
+
+if [ ! -d "$CONFIG_DIR" ]; then
+    echo "Creating configuration directory: $CONFIG_DIR"
+    sudo mkdir -p "$CONFIG_DIR"
+fi
+
+# Copy the default configuration file to /etc/nrfmesh
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Copying default configuration file to: $CONFIG_FILE"
+    sudo cp "$SCRIPT_DIR/nrfmesh.conf" "$CONFIG_FILE"
+else
+    echo "Configuration file already exists: $CONFIG_FILE"
+fi
+
+rm -rf nrfmesh
 
 echo "Installation complete!"

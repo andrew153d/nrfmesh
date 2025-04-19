@@ -1,12 +1,12 @@
 /*
  * Copyright 2020 Andrew Rossignol andrew.rossignol@gmail.com
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +26,10 @@
 #include <tclap/CmdLine.h>
 #include <unistd.h>
 
+#include "nerfnet/net/config_parser.h"
 #include "nerfnet/net/primary_radio_interface.h"
 #include "nerfnet/net/secondary_radio_interface.h"
+#include "nerfnet/net/common_radio_interface.h"
 #include "nerfnet/util/log.h"
 #include "nerfnet/util/time.h"
 
@@ -41,7 +43,8 @@ constexpr char kDescription[] =
 constexpr char kVersion[] = "0.0.1";
 
 // Sets flags for a given interface. Quits and logs the error on failure.
-void SetInterfaceFlags(const std::string_view& device_name, int flags) {
+void SetInterfaceFlags(const std::string_view &device_name, int flags)
+{
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   CHECK(fd >= 0, "Failed to open socket: %s (%d)", strerror(errno), errno);
 
@@ -50,12 +53,13 @@ void SetInterfaceFlags(const std::string_view& device_name, int flags) {
   strncpy(ifr.ifr_name, std::string(device_name).c_str(), IFNAMSIZ);
   int status = ioctl(fd, SIOCSIFFLAGS, &ifr);
   CHECK(status >= 0, "Failed to set tunnel interface: %s (%d)",
-      strerror(errno), errno);
+        strerror(errno), errno);
   close(fd);
 }
 
-void SetIPAddress(const std::string_view& device_name,
-                  const std::string_view& ip, const std::string& ip_mask) {
+void SetIPAddress(const std::string_view &device_name,
+                  const std::string_view &ip, const std::string &ip_mask)
+{
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   CHECK(fd >= 0, "Failed to open socket: %s (%d)", strerror(errno), errno);
 
@@ -64,25 +68,26 @@ void SetIPAddress(const std::string_view& device_name,
 
   ifr.ifr_addr.sa_family = AF_INET;
   CHECK(inet_pton(AF_INET, std::string(ip).c_str(),
-        &reinterpret_cast<struct sockaddr_in*>(&ifr.ifr_addr)->sin_addr) == 1,
-      "Failed to assign IP address: %s (%d)", strerror(errno), errno);
+                  &reinterpret_cast<struct sockaddr_in *>(&ifr.ifr_addr)->sin_addr) == 1,
+        "Failed to assign IP address: %s (%d)", strerror(errno), errno);
   int status = ioctl(fd, SIOCSIFADDR, &ifr);
   CHECK(status >= 0, "Failed to set tunnel interface ip: %s (%d)",
-      strerror(errno), errno);
+        strerror(errno), errno);
 
   ifr.ifr_netmask.sa_family = AF_INET;
   CHECK(inet_pton(AF_INET, std::string(ip_mask).c_str(),
-        &reinterpret_cast<struct sockaddr_in*>(&ifr.ifr_netmask)->sin_addr) == 1,
-      "Failed to assign IP mask: %s (%d)", strerror(errno), errno);
+                  &reinterpret_cast<struct sockaddr_in *>(&ifr.ifr_netmask)->sin_addr) == 1,
+        "Failed to assign IP mask: %s (%d)", strerror(errno), errno);
   status = ioctl(fd, SIOCSIFNETMASK, &ifr);
   CHECK(status >= 0, "Failed to set tunnel interface mask: %s (%d)",
-      strerror(errno), errno);
+        strerror(errno), errno);
   close(fd);
 }
 
 // Opens the tunnel interface to listen on. Always returns a valid file
 // descriptor or quits and logs the error.
-int OpenTunnel(const std::string_view& device_name) {
+int OpenTunnel(const std::string_view &device_name)
+{
   int fd = open("/dev/net/tun", O_RDWR);
   CHECK(fd >= 0, "Failed to open tunnel file: %s (%d)", strerror(errno), errno);
 
@@ -92,7 +97,7 @@ int OpenTunnel(const std::string_view& device_name) {
 
   int status = ioctl(fd, TUNSETIFF, &ifr);
   CHECK(status >= 0, "Failed to set tunnel interface: %s (%d)",
-      strerror(errno), errno);
+        strerror(errno), errno);
   return fd;
 }
 
@@ -235,15 +240,15 @@ int main(int argc, char **argv)
   // }
 
   // Setup tunnel.
-  int tunnel_fd = OpenTunnel(interface_name_arg.getValue());
-  LOGI("tunnel '%s' opened", interface_name_arg.getValue().c_str());
-  SetInterfaceFlags(interface_name_arg.getValue(), IFF_UP);
-  LOGI("tunnel '%s' up", interface_name_arg.getValue().c_str());
-  SetIPAddress(interface_name_arg.getValue(), tunnel_ip,
-      tunnel_ip_mask.getValue());
+  int tunnel_fd = OpenTunnel(config.getConfig().interface_name);
+  LOGI("tunnel '%s' opened", config.getConfig().interface_name.c_str());
+  SetInterfaceFlags(config.getConfig().interface_name, IFF_UP);
+  LOGI("tunnel '%s' up", config.getConfig().interface_name.c_str());
+  SetIPAddress(config.getConfig().interface_name, tunnel_ip,
+               config.getConfig().tunnel_netmask);
   LOGI("tunnel '%s' configured with '%s' mask '%s'",
-       interface_name_arg.getValue().c_str(), tunnel_ip.c_str(),
-       tunnel_ip_mask.getValue().c_str());
+       config.getConfig().interface_name.c_str(), tunnel_ip.c_str(),
+       config.getConfig().tunnel_netmask.c_str());
 
   if ((!mode_arg.isSet() && config.getConfig().mode == PRIMARY) || (mode_arg.isSet() && mode_arg.getValue() == 0))
   {

@@ -2,3 +2,5 @@
 *.swn
 *.swo
 build
+update.sh
+.vscode
