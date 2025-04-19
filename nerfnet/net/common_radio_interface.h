@@ -79,6 +79,24 @@ namespace nerfnet
     // The mask for IDs.
     static constexpr uint8_t kIDMask = 0x0f;
 
+    // Radio Packet types
+    enum packet_type
+    {
+      UNKNOWN,
+      DISCOVERY,
+      DISCOVERY_ACK,
+    };
+    // Radio Packet
+    #pragma pack(push, 1)
+    struct RadioPacket {
+      uint8_t type:2;
+      uint8_t padding:6;
+      uint8_t data[31]; // Add padding to make the struct size 32 bytes
+    };
+    #pragma pack(pop)
+    static_assert(sizeof(RadioPacket) == 32, "RadioPacket size must be 32 bytes");
+
+
     // A tunnel Tx/Rx request exchanged between systems.
     struct TunnelTxRxPacket {
       std::optional<uint8_t> id;

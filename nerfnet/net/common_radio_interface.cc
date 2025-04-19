@@ -35,7 +35,7 @@ namespace nerfnet
       uint16_t ce_pin, int tunnel_fd,
       uint32_t primary_addr, uint32_t secondary_addr, uint8_t channel,
       uint64_t poll_interval_us)
-      : device_id_(device_id), 
+      : device_id_(device_id),
         radio_(ce_pin, 0),
         tunnel_fd_(tunnel_fd),
         primary_addr_(primary_addr),
@@ -58,51 +58,135 @@ namespace nerfnet
     radio_.setRetries(0, 15);
     radio_.setCRCLength(RF24_CRC_8);
     CHECK(radio_.isChipConnected(), "NRF24L01 is unavailable");
- 
 
-    if(device_id_ == 1)
-    {
-      auto temp = primary_addr_;
-      primary_addr = secondary_addr;
-      secondary_addr = temp;
-    }
+    LOGI("RADIO AUTO NEGOTIATION\n");
 
-    radio_.openWritingPipe(primary_addr);
-    radio_.openReadingPipe(kPipeId, secondary_addr);
-    char payload[32] = "Hello World!";
+    // Begin auto negotiation section //
+    // - Radio opens a pipe with a discovery address
+    // - Radio sends out its discovery data and listens for a response from other radios
+    // - If no response, it sets its reading address and writing address to defaults
+    // - if a radio receives a discovery message, it will respond with its reading address and writing address
+
+
+    uint32_t base_address = 0xABDFF00;
+    uint32_t discovery_pipe_address = base_address;
+    uint32_t reading_pipe_address = base_address + 1;
+    uint32_t writing_pipe_address = base_address + 2;
+
+    bool received_discovery_message = false;
+
+    uint32_t discovery_pipe = 2;
+    RadioPacket discovery_packet;
+    std::memset(&discovery_packet, 0, sizeof(discovery_packet));
+    discovery_packet.type = packet_type::DISCOVERY;
+      
+  
+    LOGI("opening discovery reading pipe on %d, 0x%x", discovery_pipe, discovery_pipe_address);
+    radio_.openReadingPipe(discovery_pipe, discovery_pipe_address);
+    radio_.openWritingPipe(discovery_pipe_address);
+    radio_.stopListening();
+    radio_.write(&discovery_packet, sizeof(discovery_packet)); // transmit discovery payload
+    radio_.txStandBy(); // ensure the radio is in standby mode before listening
+    radio_.startListening();
+
+    //Wait 5 seconds for a returning discovery ack message
     auto start = nerfnet::TimeNowUs();
-    while(1)
+    RadioPacket recvd_packet;
+    bool configuration_complete = false;
+    while (!configuration_complete)
     {
-      radio_.startListening(); // put radio in RX mode
-      delay(10);            // wait for 1 second
       if (radio_.available())
       {
         uint8_t pipe;
         if (radio_.available(&pipe))
         { // is there a payload? get the pipe number that received it
           uint8_t bytes = radio_.getPayloadSize(); // get the size of the payload
-          radio_.read(&payload, bytes);            // fetch payload from FIFO
-          LOGI("Received %d bytes : %s", bytes, payload);      // print the size of the payload
+          radio_.read(&recvd_packet, bytes);            // fetch payload from FIFO
+          // LOGI("Received %d bytes on pipe %d", bytes, pipe); // print the size of the payload
+          // for (int i = 0; i < bytes; ++i)
+          // {
+          //   printf("%02X ", static_cast<unsigned char>(read_buffer[i]));
+          // }
+          // printf("\n");
           
-        }
-      }
-      if(nerfnet::TimeNowUs() - start > 1000000)
-      {
-        start = nerfnet::TimeNowUs();           // end the timer
-        radio_.stopListening(); // put radio in TX mode
-        bool result = radio_.write(&payload[0], sizeof(payload)); // transmit & save the report
-        if(result)
-        {
-          LOGI("Transmission successful!");
-        }else
-        {
-          LOGI("Transmission failed or timed out");
+          switch(recvd_packet.type)
+          {
+            case packet_type::DISCOVERY:
+            LOGI("Received Discovery");
+            radio_.stopListening();
+            discovery_packet.type = packet_type::DISCOVERY_ACK;
+            discovery_packet.data[0] = reading_pipe_address & 0xFF;
+            discovery_packet.data[1] = writing_pipe_address & 0xFF;
+            radio_.write(&discovery_packet, sizeof(discovery_packet)); // transmit discovery payload
+            radio_.txStandBy(); // ensure the radio is in standby mode before listening
+            
+            configuration_complete = true;
+            
+            break;
+            case packet_type::DISCOVERY_ACK:
+            LOGI("Received Discovery Ack");
+            reading_pipe_address = recvd_packet.data[1] | base_address;
+            writing_pipe_address = recvd_packet.data[0] | base_address;
+            configuration_complete = true;
+            break;
+          }
         }
       }
     }
 
+    LOGI("Reading pipe address: 0x%x", reading_pipe_address);
+    LOGI("Writing pipe address: 0x%x", writing_pipe_address);
+    exit(0);
 
+    // if (device_id_ == 1)
+    // {
+    //   LOGI("opening writing pipe on 0x%x", starting_address);
+    //   radio_.openWritingPipe(starting_address);
 
+    //   LOGI("opening reading pipe on 0x%x", starting_address + 1);
+    //   radio_.openReadingPipe(kPipeId, starting_address + 1);
+    // }
+    // else
+    // {
+    //   LOGI("opening writing pipe on 0x%x", starting_address + 1);
+    //   radio_.openWritingPipe(starting_address + 1);
+
+    //   LOGI("opening reading pipe on 0x%x", starting_address);
+    //   radio_.openReadingPipe(kPipeId, starting_address);
+    // }
+
+    char payload[32] = "Hello World!";
+    start = nerfnet::TimeNowUs();
+    while (1)
+    {
+      uint8_t available_pipe_ = 0;
+      if (radio_.available())
+      {
+        uint8_t pipe;
+        if (radio_.available(&pipe))
+        {                                                 // is there a payload? get the pipe number that received it
+          uint8_t bytes = radio_.getPayloadSize();        // get the size of the payload
+          radio_.read(&payload, bytes);                   // fetch payload from FIFO
+          LOGI("Received %d bytes : %s on pipe %d", bytes, payload, pipe); // print the size of the payload
+        }
+      }
+      if (nerfnet::TimeNowUs() - start > 1000000)
+      {
+        start = nerfnet::TimeNowUs();                             // end the timer
+        radio_.stopListening();                                   // put radio in TX mode
+        bool result = radio_.write(&payload[0], sizeof(payload)); // transmit & save the report
+        radio_.txStandBy();
+        if (result)
+        {
+          LOGI("Transmission successful!");
+        }
+        else
+        {
+          LOGI("Transmission failed or timed out");
+        }
+        radio_.startListening();
+      }
+    }
 
     pending_network_frame_buffer_.clear();
     std::vector<uint8_t> hello_message = {'H', 'e', 'l', 'l', 'o', ' ', 'f', 'r', 'o', 'm', ' ', 't', 'h', 'e', ' ', 'o', 't', 'h', 'e', 'r', ' ', 's', 'i', 'd', 'e'};
@@ -147,41 +231,41 @@ namespace nerfnet
         last_send_time = TimeNowUs();
         LOGI("Sending");
         auto result = RadioSend({'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'});
-        switch(result)
-        { 
-          case RequestResult::Success:
-            LOGI("Sent hello message");
-            break;
-          case RequestResult::Malformed:
-            LOGE("Malformed request");
-            break;
-          case RequestResult::TransmitError:
-            LOGE("Transmit error");
-            break;
-          default:
-            LOGE("Unknown error");
-            break;
+        switch (result)
+        {
+        case RequestResult::Success:
+          LOGI("Sent hello message");
+          break;
+        case RequestResult::Malformed:
+          LOGE("Malformed request");
+          break;
+        case RequestResult::TransmitError:
+          LOGE("Transmit error");
+          break;
+        default:
+          LOGE("Unknown error");
+          break;
         }
       }
     }
-    while(1)
+    while (1)
     {
       std::vector<uint8_t> response(kMaxPacketSize);
       LOGI("Received response");
       auto result = RadioReceive(response);
       LOGI("Received response");
-      switch(result)
+      switch (result)
       {
-        case RequestResult::Success:
-          LOGI("Received response");
-          LOGI("Response: %s", std::string(response.begin(), response.end()).c_str());
-          break;
-        case RequestResult::Timeout:
-          //LOGE("Timeout receiving response");
-          break;
-        default:
-          LOGE("Unknown error");
-          break;
+      case RequestResult::Success:
+        LOGI("Received response");
+        LOGI("Response: %s", std::string(response.begin(), response.end()).c_str());
+        break;
+      case RequestResult::Timeout:
+        // LOGE("Timeout receiving response");
+        break;
+      default:
+        LOGE("Unknown error");
+        break;
       }
     }
     while (1)
@@ -451,7 +535,7 @@ namespace nerfnet
     {
       if (timeout_us != 0 && (start_us + timeout_us) < TimeNowUs())
       {
-        //LOGE("Timeout receiving response");
+        // LOGE("Timeout receiving response");
         return RequestResult::Timeout;
       }
     }
